@@ -173,10 +173,13 @@ export class RSSNewsClient {
                          item.querySelector('summary')?.textContent || '';
       const content = item.querySelector('content, content\\:encoded')?.textContent || '';
       
-      // Try to extract images from various RSS extensions
+      // Try to extract images from various RSS extensions and HTML content
       const mediaContent = item.querySelector('media\\:content')?.getAttribute('url') ||
                           item.querySelector('enclosure[type^="image"]')?.getAttribute('url');
       const mediaThumbnail = item.querySelector('media\\:thumbnail')?.getAttribute('url');
+      
+      // Also try to extract image from description/content HTML
+      const htmlImage = this.extractImageFromHTML(description || content);
 
       parsedItems.push({ 
         title, 
@@ -186,7 +189,7 @@ export class RSSNewsClient {
         description, 
         content,
         mediaContent: mediaContent || undefined,
-        mediaThumbnail: mediaThumbnail || undefined
+        mediaThumbnail: mediaThumbnail || htmlImage || undefined
       });
     });
 
@@ -230,6 +233,55 @@ export class RSSNewsClient {
       url: item.link || '#',
       imageUrl: imageUrl
     };
+  }
+
+  /**
+   * Extracts image URL from HTML content
+   */
+  private extractImageFromHTML(html: string): string | undefined {
+    if (!html) return undefined;
+
+    // Create a temporary DOM element to parse HTML
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+
+    // Try to find img tags
+    const img = temp.querySelector('img');
+    if (img) {
+      const src = img.getAttribute('src') || img.getAttribute('data-src');
+      if (src && this.isValidImageUrl(src)) {
+        return src;
+      }
+    }
+
+    // Try to find image URLs in the text using regex
+    const imageUrlRegex = /(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp))/i;
+    const match = html.match(imageUrlRegex);
+    if (match && match[1]) {
+      return match[1];
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Validates if a URL is a valid image URL
+   */
+  private isValidImageUrl(url: string): boolean {
+    if (!url) return false;
+    
+    // Check if it's a valid URL
+    try {
+      new URL(url);
+    } catch {
+      return false;
+    }
+
+    // Check if it has an image extension or is from a known image host
+    const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i;
+    const imageHosts = /(images\.|img\.|cdn\.|media\.)/i;
+    
+    return imageExtensions.test(url) || imageHosts.test(url);
   }
 
   /**

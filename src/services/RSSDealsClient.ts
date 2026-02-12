@@ -75,6 +75,8 @@ export class RSSDealsClient {
     guid: string;
     pubDate: string;
     description: string;
+    mediaContent?: string;
+    mediaThumbnail?: string;
   }> {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
@@ -86,6 +88,8 @@ export class RSSDealsClient {
       guid: string;
       pubDate: string;
       description: string;
+      mediaContent?: string;
+      mediaThumbnail?: string;
     }> = [];
 
     items.forEach(item => {
@@ -94,8 +98,24 @@ export class RSSDealsClient {
       const guid = item.querySelector('guid')?.textContent || '';
       const pubDate = item.querySelector('pubDate')?.textContent || '';
       const description = item.querySelector('description')?.textContent || '';
+      
+      // Try to extract images from various RSS extensions
+      const mediaContent = item.querySelector('media\\:content')?.getAttribute('url') ||
+                          item.querySelector('enclosure[type^="image"]')?.getAttribute('url');
+      const mediaThumbnail = item.querySelector('media\\:thumbnail')?.getAttribute('url');
+      
+      // Also try to extract image from description HTML
+      const htmlImage = this.extractImageFromHTML(description);
 
-      parsedItems.push({ title, link, guid, pubDate, description });
+      parsedItems.push({ 
+        title, 
+        link, 
+        guid, 
+        pubDate, 
+        description,
+        mediaContent: mediaContent || undefined,
+        mediaThumbnail: mediaThumbnail || htmlImage || undefined
+      });
     });
 
     return parsedItems;
@@ -110,6 +130,8 @@ export class RSSDealsClient {
     guid: string;
     pubDate: string;
     description: string;
+    mediaContent?: string;
+    mediaThumbnail?: string;
   }, category: string, index: number): TechDeal {
     // Extract price information from title or description
     const priceInfo = this.extractPriceInfo(item.title, item.description);
@@ -121,6 +143,9 @@ export class RSSDealsClient {
     const expirationDate = new Date(pubDate);
     expirationDate.setDate(expirationDate.getDate() + 7);
 
+    // Get image URL from media tags or extracted from HTML
+    const imageUrl = item.mediaThumbnail || item.mediaContent;
+
     return {
       id: item.guid || `rss-deal-${category}-${index}`,
       productName: this.cleanTitle(item.title || 'Unknown Deal'),
@@ -131,7 +156,7 @@ export class RSSDealsClient {
       url: item.link || 'https://www.ozbargain.com.au',
       expirationDate: expirationDate,
       status: DealStatus.CURRENT,
-      imageUrl: undefined // OzBargain RSS doesn't include images in basic feed
+      imageUrl: imageUrl
     };
   }
 
@@ -191,6 +216,55 @@ export class RSSDealsClient {
       salePrice: 0,
       discountPercentage: 0
     };
+  }
+
+  /**
+   * Extracts image URL from HTML content
+   */
+  private extractImageFromHTML(html: string): string | undefined {
+    if (!html) return undefined;
+
+    // Create a temporary DOM element to parse HTML
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+
+    // Try to find img tags
+    const img = temp.querySelector('img');
+    if (img) {
+      const src = img.getAttribute('src') || img.getAttribute('data-src');
+      if (src && this.isValidImageUrl(src)) {
+        return src;
+      }
+    }
+
+    // Try to find image URLs in the text using regex
+    const imageUrlRegex = /(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp))/i;
+    const match = html.match(imageUrlRegex);
+    if (match && match[1]) {
+      return match[1];
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Validates if a URL is a valid image URL
+   */
+  private isValidImageUrl(url: string): boolean {
+    if (!url) return false;
+    
+    // Check if it's a valid URL
+    try {
+      new URL(url);
+    } catch {
+      return false;
+    }
+
+    // Check if it has an image extension or is from a known image host
+    const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i;
+    const imageHosts = /(images\.|img\.|cdn\.|media\.)/i;
+    
+    return imageExtensions.test(url) || imageHosts.test(url);
   }
 
   /**
