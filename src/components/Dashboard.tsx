@@ -73,7 +73,7 @@ const Dashboard: React.FC<DashboardProps> = ({ useMockData = true }) => {
     [WidgetType.TASKS]: 0, // No auto-refresh (manual only)
     [WidgetType.CALENDAR]: 30 * 60 * 1000, // 30 minutes
     [WidgetType.YOUTUBE]: 60 * 60 * 1000, // 1 hour
-    [WidgetType.DEALS]: 24 * 60 * 60 * 1000 // 24 hours (daily)
+    [WidgetType.DEALS]: 60 * 60 * 1000 // 1 hour (changed from 24 hours)
   };
 
   // Handle widget loading state updates

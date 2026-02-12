@@ -58,12 +58,20 @@ export class RSSDealsClient {
   }
 
   /**
-   * Fetches deals from a specific RSS feed
+   * Fetches deals from a specific RSS feed using browser fetch
    */
   private async fetchFromFeed(feedUrl: string, category: string): Promise<TechDeal[]> {
     try {
       const proxiedUrl = `${this.corsProxy}${encodeURIComponent(feedUrl)}`;
-      const feed = await this.parser.parseURL(proxiedUrl);
+      
+      // Use browser fetch instead of parser's built-in fetch to avoid Node.js dependencies
+      const response = await fetch(proxiedUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const xmlText = await response.text();
+      const feed = await this.parser.parseString(xmlText);
 
       return feed.items.map((item, index) => this.transformRSSItem(item, category, index));
     } catch (error) {
