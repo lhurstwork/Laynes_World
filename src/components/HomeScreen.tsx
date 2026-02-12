@@ -71,7 +71,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
 
       <div className="home-stats">
         <div className="stat-card">
-          <div className="stat-value">2</div>
+          <div className="stat-value">3</div>
           <div className="stat-label">Active Widgets</div>
         </div>
         <div className="stat-card">

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { WidgetType, type WidgetConfig } from '../types';
 import { YouTubeWidget } from './YouTubeWidget';
 import { DealsWidget } from './DealsWidget';
+import { NewsWidget } from './NewsWidget';
 import WidgetWrapper from './WidgetWrapper';
 import Navigation, { type NavigationTab } from './Navigation';
 import HomeScreen from './HomeScreen';
@@ -34,7 +35,7 @@ const Dashboard: React.FC<DashboardProps> = ({ useMockData = true }) => {
       type: WidgetType.NEWS,
       title: 'News Aggregator',
       position: 1,
-      enabled: false // Not yet implemented
+      enabled: true
     },
     {
       id: 'tasks-widget',
@@ -176,6 +177,15 @@ const Dashboard: React.FC<DashboardProps> = ({ useMockData = true }) => {
 
     let widgetContent;
     switch (config.type) {
+      case WidgetType.NEWS:
+        widgetContent = (
+          <NewsWidget
+            useMockData={useMockData}
+            onLoadingChange={(isLoading) => handleWidgetLoadingChange(config.id, isLoading)}
+            onError={(error) => handleWidgetError(config.id, error)}
+          />
+        );
+        break;
       case WidgetType.YOUTUBE:
         widgetContent = (
           <YouTubeWidget
@@ -218,6 +228,14 @@ const Dashboard: React.FC<DashboardProps> = ({ useMockData = true }) => {
       case 'home':
         return <HomeScreen onNavigate={(tab) => setActiveTab(tab as NavigationTab)} />;
       
+      case 'news':
+        const newsConfig = widgetConfigs.find(c => c.type === WidgetType.NEWS);
+        return newsConfig ? (
+          <div className="single-widget-view">
+            {renderWidget(newsConfig)}
+          </div>
+        ) : <div className="coming-soon">News widget not available</div>;
+      
       case 'youtube':
         const youtubeConfig = widgetConfigs.find(c => c.type === WidgetType.YOUTUBE);
         return youtubeConfig ? (
@@ -236,7 +254,6 @@ const Dashboard: React.FC<DashboardProps> = ({ useMockData = true }) => {
       
       case 'calendar':
       case 'tasks':
-      case 'news':
         return (
           <div className="coming-soon">
             <div className="coming-soon-icon">🚧</div>
