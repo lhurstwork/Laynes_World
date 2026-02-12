@@ -1,13 +1,12 @@
-import Parser from 'rss-parser';
 import type { TechDeal } from '../types';
 import { DealStatus } from '../types';
 
 /**
  * RSS-based Deals Client for fetching real deals from OzBargain
  * Uses CORS proxy to bypass browser restrictions
+ * Parses RSS feeds manually without external dependencies
  */
 export class RSSDealsClient {
-  private parser: Parser;
   private corsProxy = 'https://api.allorigins.win/raw?url=';
   
   // OzBargain RSS feed URLs
@@ -16,18 +15,6 @@ export class RSSDealsClient {
     electronics: 'https://www.ozbargain.com.au/cat/electrical-electronics/feed',
     mobile: 'https://www.ozbargain.com.au/cat/mobile/feed',
   };
-
-  constructor() {
-    this.parser = new Parser({
-      customFields: {
-        item: [
-          ['category', 'category'],
-          ['media:thumbnail', 'thumbnail'],
-          ['media:content', 'mediaContent']
-        ]
-      }
-    });
-  }
 
   /**
    * Fetches deals from OzBargain RSS feeds
@@ -58,22 +45,21 @@ export class RSSDealsClient {
   }
 
   /**
-   * Fetches deals from a specific RSS feed using browser fetch
+   * Fetches deals from a specific RSS feed using manual XML parsing
    */
   private async fetchFromFeed(feedUrl: string, category: string): Promise<TechDeal[]> {
     try {
       const proxiedUrl = `${this.corsProxy}${encodeURIComponent(feedUrl)}`;
       
-      // Use browser fetch instead of parser's built-in fetch to avoid Node.js dependencies
       const response = await fetch(proxiedUrl);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const xmlText = await response.text();
-      const feed = await this.parser.parseString(xmlText);
+      const items = this.parseRSSXML(xmlText);
 
-      return feed.items.map((item, index) => this.transformRSSItem(item, category, index));
+      return items.map((item, index) => this.transformRSSItem(item, category, index));
     } catch (error) {
       console.error(`Error fetching feed ${feedUrl}:`, error);
       return [];
@@ -81,11 +67,52 @@ export class RSSDealsClient {
   }
 
   /**
+   * Manually parse RSS XML without external dependencies
+   */
+  private parseRSSXML(xmlText: string): Array<{
+    title: string;
+    link: string;
+    guid: string;
+    pubDate: string;
+    description: string;
+  }> {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+    
+    const items = xmlDoc.querySelectorAll('item');
+    const parsedItems: Array<{
+      title: string;
+      link: string;
+      guid: string;
+      pubDate: string;
+      description: string;
+    }> = [];
+
+    items.forEach(item => {
+      const title = item.querySelector('title')?.textContent || '';
+      const link = item.querySelector('link')?.textContent || '';
+      const guid = item.querySelector('guid')?.textContent || '';
+      const pubDate = item.querySelector('pubDate')?.textContent || '';
+      const description = item.querySelector('description')?.textContent || '';
+
+      parsedItems.push({ title, link, guid, pubDate, description });
+    });
+
+    return parsedItems;
+  }
+
+  /**
    * Transforms RSS item to TechDeal format
    */
-  private transformRSSItem(item: any, category: string, index: number): TechDeal {
+  private transformRSSItem(item: {
+    title: string;
+    link: string;
+    guid: string;
+    pubDate: string;
+    description: string;
+  }, category: string, index: number): TechDeal {
     // Extract price information from title or description
-    const priceInfo = this.extractPriceInfo(item.title || '', item.contentSnippet || '');
+    const priceInfo = this.extractPriceInfo(item.title, item.description);
     
     // Parse publication date
     const pubDate = item.pubDate ? new Date(item.pubDate) : new Date();
@@ -104,7 +131,7 @@ export class RSSDealsClient {
       url: item.link || 'https://www.ozbargain.com.au',
       expirationDate: expirationDate,
       status: DealStatus.CURRENT,
-      imageUrl: this.extractImageUrl(item)
+      imageUrl: undefined // OzBargain RSS doesn't include images in basic feed
     };
   }
 
@@ -164,28 +191,6 @@ export class RSSDealsClient {
       salePrice: 0,
       discountPercentage: 0
     };
-  }
-
-  /**
-   * Extracts image URL from RSS item
-   */
-  private extractImageUrl(item: any): string | undefined {
-    // Try media:thumbnail
-    if (item.thumbnail?.url) {
-      return item.thumbnail.url;
-    }
-    
-    // Try media:content
-    if (item.mediaContent?.url) {
-      return item.mediaContent.url;
-    }
-
-    // Try to extract from enclosure
-    if (item.enclosure?.url) {
-      return item.enclosure.url;
-    }
-
-    return undefined;
   }
 
   /**
