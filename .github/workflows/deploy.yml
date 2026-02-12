@@ -34,14 +34,13 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Verify and ensure .nojekyll exists
+      - name: Ensure .nojekyll exists in dist
         run: |
-          if [ ! -f dist/.nojekyll ]; then
-            echo "Creating .nojekyll file in dist/"
-            touch dist/.nojekyll
-          fi
-          echo "Contents of dist/:"
-          ls -la dist/
+          echo "Creating .nojekyll file in dist/"
+          touch dist/.nojekyll
+          echo "Verifying .nojekyll exists:"
+          ls -la dist/ | grep -E '(\.nojekyll|index\.html)'
+          echo "File created successfully"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
