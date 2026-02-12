@@ -67,11 +67,16 @@ If it works locally but not on GitHub Pages, the issue is with deployment config
 ## Common Issues and Solutions
 
 ### Issue: Page loads but shows "Loading..." forever
-**Cause:** JavaScript bundle failed to load or execute
+**Cause:** JavaScript bundle failed to load or execute, OR Jekyll processing is interfering
 **Solution:**
-1. Check browser console for errors
-2. Verify all assets loaded successfully in Network tab
-3. Try incognito/private browsing mode
+1. Check browser console for errors (especially "Failed to load resource: 404" for main.tsx)
+2. If you see a 404 error for `main.tsx`, this means Jekyll is processing the site
+   - Verify `public/.nojekyll` file exists in your repository
+   - The `.nojekyll` file should be empty and located in the `public/` directory
+   - After adding it, rebuild and redeploy
+3. Verify all assets loaded successfully in Network tab
+4. Try incognito/private browsing mode
+5. Wait 10-15 minutes for GitHub Pages CDN to clear cache
 
 ### Issue: Styles are missing (unstyled content)
 **Cause:** CSS file failed to load
@@ -87,6 +92,26 @@ If it works locally but not on GitHub Pages, the issue is with deployment config
 2. Enable GitHub Pages in Settings → Pages
 3. Set source to "GitHub Actions"
 4. Wait 5-10 minutes after first deployment
+
+### Issue: Jekyll Processing Interference (404 for main.tsx)
+**Cause:** GitHub Pages uses Jekyll by default, which can interfere with Vite builds
+**Symptoms:**
+- Browser console shows: `Failed to load resource: the server responded with a status of 404 () main.tsx:1`
+- Loading spinner never goes away
+- Site worked locally but fails on GitHub Pages
+
+**Solution:**
+1. Verify `.nojekyll` file exists in `public/` directory
+2. The file should be completely empty (0 bytes)
+3. Rebuild the project: `npm run build`
+4. Verify `.nojekyll` is in the `dist/` folder after build
+5. Commit and push changes
+6. Wait 10-15 minutes for GitHub Pages CDN to propagate changes
+7. Clear browser cache completely (Ctrl+Shift+Delete)
+8. Try accessing in incognito mode
+
+**Why this happens:**
+Jekyll processes files starting with underscores differently, which can break Vite's asset loading. The `.nojekyll` file tells GitHub Pages to skip Jekyll processing entirely.
 
 ### Issue: Changes not appearing
 **Cause:** Browser cache or deployment not complete
