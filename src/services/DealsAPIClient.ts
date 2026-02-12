@@ -1,19 +1,22 @@
 import type { TechDeal } from '../types';
 import { DealStatus } from '../types';
 import { config } from '../config/environment';
+import { RSSDealsClient } from './RSSDealsClient';
 
 /**
  * Deals API Client for fetching technology deals
- * Uses mock data for development to avoid API dependencies
+ * Uses RSS feeds from OzBargain for real data, with mock data fallback
  */
 export class DealsAPIClient {
   private useMockData: boolean;
+  private rssClient: RSSDealsClient;
 
   constructor(_apiKey?: string, useMockData?: boolean) {
     // Store for future use when real API is implemented
     // this._apiKey = apiKey || config.dealsApiKey;
     // this._baseUrl = config.dealsApiUrl;
     this.useMockData = useMockData !== undefined ? useMockData : config.useMockData;
+    this.rssClient = new RSSDealsClient();
   }
 
   /**
@@ -30,13 +33,20 @@ export class DealsAPIClient {
       return allDeals;
     }
 
-    // Real API implementation would go here
-    // const response = await this.apiClient.get<DealsAPIResponse>('/deals', {
-    //   params: { status }
-    // });
-    // return this.transformAPIResponse(response);
-
-    throw new Error('Real Deals API not implemented');
+    // Fetch real deals from RSS feeds
+    try {
+      const allDeals = await this.rssClient.fetchDeals();
+      
+      if (status) {
+        return allDeals.filter(deal => deal.status === status);
+      }
+      
+      return allDeals;
+    } catch (error) {
+      console.error('Failed to fetch RSS deals, falling back to mock data:', error);
+      // Fallback to mock data if RSS fetch fails
+      return this.getMockDeals();
+    }
   }
 
   /**
