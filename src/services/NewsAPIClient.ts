@@ -1,18 +1,21 @@
 import type { NewsArticle, NewsCategory } from '../types';
 import { config } from '../config/environment';
+import { RSSNewsClient } from './RSSNewsClient';
 
 /**
  * News API Client for fetching news articles
- * Uses mock data for development to avoid API dependencies
+ * Uses RSS feeds from major outlets for real data, with mock data fallback
  */
 export class NewsAPIClient {
   private useMockData: boolean;
+  private rssClient: RSSNewsClient;
 
   constructor(_apiKey?: string, useMockData?: boolean) {
     // Store for future use when real API is implemented
     // this._apiKey = apiKey || config.newsApiKey;
     // this._baseUrl = config.newsApiUrl;
     this.useMockData = useMockData !== undefined ? useMockData : config.useMockData;
+    this.rssClient = new RSSNewsClient();
   }
 
   /**
@@ -29,13 +32,18 @@ export class NewsAPIClient {
       return allArticles;
     }
 
-    // Real API implementation would go here
-    // const response = await this.apiClient.get<NewsAPIResponse>('/articles', {
-    //   params: { category }
-    // });
-    // return this.transformAPIResponse(response);
-
-    throw new Error('Real News API not implemented');
+    // Fetch real news from RSS feeds
+    try {
+      return await this.rssClient.fetchArticles(category);
+    } catch (error) {
+      console.error('Failed to fetch RSS news, falling back to mock data:', error);
+      // Fallback to mock data if RSS fetch fails
+      const allArticles = this.getMockArticles();
+      if (category) {
+        return allArticles.filter(article => article.category === category);
+      }
+      return allArticles;
+    }
   }
 
   /**
