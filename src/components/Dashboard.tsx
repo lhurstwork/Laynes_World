@@ -3,6 +3,8 @@ import { WidgetType, type WidgetConfig } from '../types';
 import { YouTubeWidget } from './YouTubeWidget';
 import { DealsWidget } from './DealsWidget';
 import WidgetWrapper from './WidgetWrapper';
+import Navigation, { type NavigationTab } from './Navigation';
+import HomeScreen from './HomeScreen';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -23,6 +25,7 @@ const Dashboard: React.FC<DashboardProps> = ({ useMockData = true }) => {
   const [widgetStates, setWidgetStates] = useState<Map<string, WidgetState>>(new Map());
   const [globalError, setGlobalError] = useState<Error | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [activeTab, setActiveTab] = useState<NavigationTab>('home');
 
   // Widget registry configuration with refresh intervals
   const widgetConfigs: WidgetConfig[] = [
@@ -209,6 +212,44 @@ const Dashboard: React.FC<DashboardProps> = ({ useMockData = true }) => {
     );
   };
 
+  // Render content based on active tab
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'home':
+        return <HomeScreen onNavigate={(tab) => setActiveTab(tab as NavigationTab)} />;
+      
+      case 'youtube':
+        const youtubeConfig = widgetConfigs.find(c => c.type === WidgetType.YOUTUBE);
+        return youtubeConfig ? (
+          <div className="single-widget-view">
+            {renderWidget(youtubeConfig)}
+          </div>
+        ) : <div className="coming-soon">YouTube widget not available</div>;
+      
+      case 'deals':
+        const dealsConfig = widgetConfigs.find(c => c.type === WidgetType.DEALS);
+        return dealsConfig ? (
+          <div className="single-widget-view">
+            {renderWidget(dealsConfig)}
+          </div>
+        ) : <div className="coming-soon">Deals widget not available</div>;
+      
+      case 'calendar':
+      case 'tasks':
+      case 'news':
+        return (
+          <div className="coming-soon">
+            <div className="coming-soon-icon">🚧</div>
+            <h2>Coming Soon</h2>
+            <p>This feature is currently under development.</p>
+          </div>
+        );
+      
+      default:
+        return <HomeScreen onNavigate={(tab) => setActiveTab(tab as NavigationTab)} />;
+    }
+  };
+
   // Global error display
   if (globalError) {
     return (
@@ -244,21 +285,10 @@ const Dashboard: React.FC<DashboardProps> = ({ useMockData = true }) => {
         Skip to main content
       </a>
       
-      <header className="dashboard-header" role="banner">
-        <h1>Layne's World Dashboard</h1>
-      </header>
+      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
       
       <main id="main-content" className="dashboard-content">
-        <div className="widgets-grid" role="region" aria-label="Dashboard widgets">
-          {widgetConfigs
-            .filter(config => config.enabled)
-            .sort((a, b) => a.position - b.position)
-            .map(config => (
-              <React.Fragment key={config.id}>
-                {renderWidget(config)}
-              </React.Fragment>
-            ))}
-        </div>
+        {renderContent()}
       </main>
     </div>
   );
