@@ -2,21 +2,21 @@ import type { TechDeal } from '../types';
 import { DealStatus } from '../types';
 import { config } from '../config/environment';
 import { RSSDealsClient } from './RSSDealsClient';
+import { CloudflareDealsClient } from './CloudflareDealsClient';
 
 /**
  * Deals API Client for fetching technology deals
- * Uses RSS feeds from OzBargain for real data, with mock data fallback
+ * Uses Cloudflare Worker for scraped data, with RSS fallback
  */
 export class DealsAPIClient {
   private useMockData: boolean;
   private rssClient: RSSDealsClient;
+  private cloudflareClient: CloudflareDealsClient;
 
   constructor(_apiKey?: string, useMockData?: boolean) {
-    // Store for future use when real API is implemented
-    // this._apiKey = apiKey || config.dealsApiKey;
-    // this._baseUrl = config.dealsApiUrl;
     this.useMockData = useMockData !== undefined ? useMockData : config.useMockData;
     this.rssClient = new RSSDealsClient();
+    this.cloudflareClient = new CloudflareDealsClient();
   }
 
   /**
@@ -33,18 +33,32 @@ export class DealsAPIClient {
       return allDeals;
     }
 
-    // Fetch real deals from RSS feeds
+    // Try Cloudflare Worker first (scraped data)
     try {
-      const allDeals = await this.rssClient.fetchDeals();
+      const deals = await this.cloudflareClient.fetchDeals();
+      
+      if (deals.length > 0) {
+        if (status) {
+          return deals.filter(deal => deal.status === status);
+        }
+        return deals;
+      }
+    } catch (error) {
+      console.warn('Cloudflare Worker unavailable, falling back to RSS:', error);
+    }
+
+    // Fallback to RSS feeds
+    try {
+      const deals = await this.rssClient.fetchDeals();
       
       if (status) {
-        return allDeals.filter(deal => deal.status === status);
+        return deals.filter(deal => deal.status === status);
       }
       
-      return allDeals;
+      return deals;
     } catch (error) {
-      console.error('Failed to fetch RSS deals, falling back to mock data:', error);
-      // Fallback to mock data if RSS fetch fails
+      console.error('Failed to fetch deals from RSS, falling back to mock data:', error);
+      // Final fallback to mock data
       return this.getMockDeals();
     }
   }
