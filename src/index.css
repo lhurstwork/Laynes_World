@@ -27,7 +27,7 @@
   --color-warning: #f59e0b;
   --color-success: #10b981;
   
-  /* Neutral Colors - Softer palette */
+  /* Light Mode Colors */
   --color-background: #f8fafc;
   --color-surface: #ffffff;
   --color-surface-elevated: #ffffff;
@@ -66,6 +66,30 @@
   --spacing-2xl: 3rem;
 }
 
+/* Dark Mode Colors */
+[data-theme="dark"] {
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-elevated: #334155;
+  --color-border: #334155;
+  --color-border-light: #475569;
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #cbd5e1;
+  --color-text-disabled: #64748b;
+  
+  /* Adjust primary colors for dark mode */
+  --color-primary-subtle: #1e3a8a;
+  --color-secondary-subtle: #064e3b;
+  
+  /* Dark mode shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
+  --shadow-hover: 0 12px 20px -5px rgba(59, 130, 246, 0.3), 0 4px 8px -4px rgba(59, 130, 246, 0.2);
+}
+
 /* Base Styles */
 * {
   box-sizing: border-box;
@@ -83,6 +107,11 @@ body {
   background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
   background-attachment: fixed;
   line-height: 1.6;
+  transition: background var(--transition-normal), color var(--transition-normal);
+}
+
+[data-theme="dark"] body {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
 }
 
 /* Focus Styles for Accessibility */

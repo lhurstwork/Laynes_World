@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './Navigation.css';
 
 export type NavigationTab = 'home' | 'youtube' | 'deals' | 'calendar' | 'tasks' | 'news';
@@ -9,6 +9,25 @@ interface NavigationProps {
 }
 
 const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // Load theme from localStorage on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+    
+    setTheme(initialTheme);
+    document.documentElement.setAttribute('data-theme', initialTheme);
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  };
+
   const tabs = [
     { id: 'home' as NavigationTab, label: 'Home', icon: '🏠' },
     { id: 'youtube' as NavigationTab, label: 'YouTube', icon: '▶️' },
@@ -40,6 +59,15 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
             </button>
           ))}
         </div>
+
+        <button
+          className="theme-toggle"
+          onClick={toggleTheme}
+          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+          title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
       </div>
     </nav>
   );
