@@ -9,24 +9,30 @@
 /* Hero Section */
 .home-hero {
   text-align: center;
-  padding: var(--spacing-xl) 0;
-  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-2xl) 0;
+  margin-bottom: var(--spacing-2xl);
 }
 
 .home-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0 0 var(--spacing-md) 0;
-  letter-spacing: -1px;
+  font-size: 3rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 var(--spacing-lg) 0;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
 }
 
 .home-subtitle {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   color: var(--color-text-secondary);
   margin: 0;
-  max-width: 600px;
+  max-width: 700px;
   margin: 0 auto;
+  line-height: 1.6;
+  font-weight: 500;
 }
 
 /* Grid of Cards */
@@ -38,15 +44,17 @@
 }
 
 .home-card {
-  background: var(--color-surface);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-2xl);
   text-align: left;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-normal);
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
 
 .home-card::before {
@@ -55,8 +63,8 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: var(--card-color, var(--color-primary));
+  height: 5px;
+  background: linear-gradient(90deg, var(--card-color, var(--color-primary)), var(--color-secondary));
   transform: scaleX(0);
   transform-origin: left;
   transition: transform var(--transition-normal);
@@ -64,8 +72,8 @@
 
 .home-card:hover {
   border-color: var(--card-color, var(--color-primary));
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-8px);
 }
 
 .home-card:hover::before {
