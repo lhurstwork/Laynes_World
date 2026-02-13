@@ -141,6 +141,9 @@ export const DealsWidget: React.FC<DealsWidgetProps> = ({
   }
 
   const filteredDeals = getFilteredDeals();
+  
+  // Sort deals by discount percentage (highest first)
+  const sortedDeals = [...filteredDeals].sort((a, b) => b.discountPercentage - a.discountPercentage);
 
   return (
     <div className="deals-widget">
@@ -172,45 +175,50 @@ export const DealsWidget: React.FC<DealsWidgetProps> = ({
         </button>
       </div>
 
-      <div className="deals-grid">
-        {filteredDeals.length === 0 ? (
+      <div className="deals-list">
+        {sortedDeals.length === 0 ? (
           <p className="no-deals">No deals to display</p>
         ) : (
-          filteredDeals.map((deal) => (
-            <div
-              key={deal.id}
-              className="deal-card"
-              onClick={() => handleDealClick(deal.url)}
-              role="button"
-              tabIndex={0}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  handleDealClick(deal.url);
-                }
-              }}
-            >
-              {deal.imageUrl && (
-                <div className="deal-image">
-                  <img src={deal.imageUrl} alt={deal.productName} />
-                  <div className="deal-discount-badge">
-                    {deal.discountPercentage}% OFF
+          sortedDeals.map((deal) => {
+            const savings = deal.originalPrice - deal.salePrice;
+            return (
+              <div
+                key={deal.id}
+                className="deal-row"
+                onClick={() => handleDealClick(deal.url)}
+                role="button"
+                tabIndex={0}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleDealClick(deal.url);
+                  }
+                }}
+              >
+                <div className="deal-discount-column">
+                  <div className="discount-percentage">{deal.discountPercentage}%</div>
+                  {savings > 0 && (
+                    <div className="discount-amount">Save ${savings.toFixed(0)}</div>
+                  )}
+                </div>
+                
+                <div className="deal-content-column">
+                  <h3 className="deal-title">{deal.productName}</h3>
+                  <div className="deal-meta">
+                    <span className="deal-source">{deal.source}</span>
+                    <span className="deal-separator">•</span>
+                    <span className="deal-expiration">{formatExpirationDate(deal.expirationDate)}</span>
                   </div>
                 </div>
-              )}
-              <div className="deal-info">
-                <h3 className="deal-title">{deal.productName}</h3>
-                <div className="deal-pricing">
-                  <span className="deal-sale-price">{formatPrice(deal.salePrice)}</span>
-                  <span className="deal-original-price">{formatPrice(deal.originalPrice)}</span>
+                
+                <div className="deal-price-column">
+                  <div className="deal-sale-price">${formatPrice(deal.salePrice)}</div>
+                  {deal.originalPrice > 0 && (
+                    <div className="deal-original-price">${formatPrice(deal.originalPrice)}</div>
+                  )}
                 </div>
-                <p className="deal-source">at {deal.source}</p>
-                <p className="deal-expiration">{formatExpirationDate(deal.expirationDate)}</p>
-                {deal.status === DealStatus.UPCOMING && (
-                  <div className="deal-status-badge upcoming">Coming Soon</div>
-                )}
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
