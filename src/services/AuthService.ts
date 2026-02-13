@@ -2,7 +2,7 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
   signOut,
-  User,
+  type User,
   updateProfile,
   sendPasswordResetEmail
 } from 'firebase/auth';
