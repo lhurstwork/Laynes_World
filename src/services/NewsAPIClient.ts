@@ -1,14 +1,16 @@
 import type { NewsArticle, NewsCategory } from '../types';
 import { config } from '../config/environment';
 import { RSSNewsClient } from './RSSNewsClient';
+import { CloudflareNewsClient } from './CloudflareNewsClient';
 
 /**
  * News API Client for fetching news articles
- * Uses RSS feeds from major outlets for real data, with mock data fallback
+ * Uses Cloudflare Worker for scraped data, with RSS fallback
  */
 export class NewsAPIClient {
   private useMockData: boolean;
   private rssClient: RSSNewsClient;
+  private cloudflareClient: CloudflareNewsClient;
 
   constructor(_apiKey?: string, useMockData?: boolean) {
     // Store for future use when real API is implemented
@@ -16,6 +18,7 @@ export class NewsAPIClient {
     // this._baseUrl = config.newsApiUrl;
     this.useMockData = useMockData !== undefined ? useMockData : config.useMockData;
     this.rssClient = new RSSNewsClient();
+    this.cloudflareClient = new CloudflareNewsClient();
   }
 
   /**
@@ -32,12 +35,23 @@ export class NewsAPIClient {
       return allArticles;
     }
 
-    // Fetch real news from RSS feeds
+    // Try Cloudflare Worker first (scraped data)
+    try {
+      const articles = await this.cloudflareClient.fetchArticles(category);
+      
+      if (articles.length > 0) {
+        return articles;
+      }
+    } catch (error) {
+      console.warn('Cloudflare Worker unavailable, falling back to RSS:', error);
+    }
+
+    // Fallback to RSS feeds
     try {
       return await this.rssClient.fetchArticles(category);
     } catch (error) {
       console.error('Failed to fetch RSS news, falling back to mock data:', error);
-      // Fallback to mock data if RSS fetch fails
+      // Final fallback to mock data
       const allArticles = this.getMockArticles();
       if (category) {
         return allArticles.filter(article => article.category === category);
