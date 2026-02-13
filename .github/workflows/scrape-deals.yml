@@ -19,12 +19,29 @@ jobs:
         with:
           node-version: '20'
       
+      - name: Install Chrome dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libgbm1 \
+            libasound2
+      
       - name: Install dependencies
         run: |
           cd scripts
           npm install
       
-      - name: Scrape OzBargain
+      - name: Scrape OzBargain with Puppeteer
         run: node scripts/scrape-ozbargain.js
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
