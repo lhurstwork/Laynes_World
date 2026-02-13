@@ -80,7 +80,7 @@ export const config: EnvironmentConfig = {
 
   // Application Settings
   appEnv: (getEnvVar('VITE_APP_ENV', 'development') as 'development' | 'production'),
-  useMockData: getBooleanEnvVar('VITE_USE_MOCK_DATA', true), // Using mock data - OzBargain has advanced Cloudflare protection
+  useMockData: getBooleanEnvVar('VITE_USE_MOCK_DATA', false), // Using real data from Reddit RSS feeds
   apiTimeout: getNumberEnvVar('VITE_API_TIMEOUT', 10000),
   maxRetries: getNumberEnvVar('VITE_MAX_RETRIES', 3),
   retryBaseDelay: getNumberEnvVar('VITE_RETRY_BASE_DELAY', 1000),
