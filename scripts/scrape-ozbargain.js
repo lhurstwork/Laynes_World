@@ -38,12 +38,47 @@ async function scrapeOzBargainWithBrowser(url, category) {
     console.log(`  Navigating to ${url}...`);
     await page.goto(url, { 
       waitUntil: 'networkidle2',
-      timeout: 60000 
+      timeout: 90000 
     });
     
-    // Wait for deal elements to load (or Cloudflare challenge to complete)
+    // Wait a bit for any JavaScript to execute
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    // Debug: Check what's on the page
+    const pageContent = await page.evaluate(() => {
+      return {
+        title: document.title,
+        hasCloudflare: document.body.innerHTML.includes('cloudflare') || document.body.innerHTML.includes('challenge'),
+        bodyText: document.body.innerText.substring(0, 500)
+      };
+    });
+    console.log(`  Page title: ${pageContent.title}`);
+    console.log(`  Has Cloudflare challenge: ${pageContent.hasCloudflare}`);
+    if (pageContent.hasCloudflare) {
+      console.log(`  ⚠ Cloudflare challenge detected! Waiting longer...`);
+      await new Promise(resolve => setTimeout(resolve, 10000));
+    }
+    
+    // Try to wait for deal elements, but don't fail if they don't appear
     console.log(`  Waiting for deals to load...`);
-    await page.waitForSelector('.node-ozbdeal', { timeout: 30000 });
+    try {
+      await page.waitForSelector('.node-ozbdeal', { timeout: 45000 });
+    } catch (error) {
+      console.log(`  Could not find .node-ozbdeal selector, trying alternative selectors...`);
+      
+      // Try alternative selectors
+      const hasDeals = await page.evaluate(() => {
+        return document.querySelector('.node') !== null || 
+               document.querySelector('[class*="deal"]') !== null;
+      });
+      
+      if (!hasDeals) {
+        console.log(`  No deals found on page. Page might be blocked or structure changed.`);
+        // Take a screenshot for debugging (optional)
+        await page.screenshot({ path: `/tmp/ozbargain-${category}.png` });
+        return [];
+      }
+    }
     
     // Extract deal data from the page
     console.log(`  Extracting deal data...`);
@@ -202,8 +237,11 @@ async function main() {
   console.log(`\n✓ Scraping completed! Total deals: ${allDeals.length}`);
   
   if (allDeals.length === 0) {
-    console.warn('⚠ Warning: No deals were scraped. Check if OzBargain structure changed.');
-    process.exit(1);
+    console.warn('⚠ Warning: No deals were scraped. This might indicate:');
+    console.warn('  - OzBargain structure has changed');
+    console.warn('  - Cloudflare is still blocking access');
+    console.warn('  - Network issues during scraping');
+    console.warn('Check the logs above for specific errors.');
   }
 }
 
