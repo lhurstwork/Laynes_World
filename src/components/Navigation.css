@@ -10,6 +10,11 @@
   box-shadow: var(--shadow-sm);
 }
 
+[data-theme="dark"] .navigation {
+  background: rgba(15, 23, 42, 0.85);
+  border-bottom-color: var(--color-border);
+}
+
 .navigation-container {
   max-width: 1400px;
   margin: 0 auto;

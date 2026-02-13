@@ -1,8 +1,15 @@
 .youtube-widget {
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border-light);
+}
+
+[data-theme="dark"] .youtube-widget {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: var(--color-border);
 }
 
 .widget-header {
@@ -14,8 +21,10 @@
 
 .widget-header h2 {
   margin: 0;
-  font-size: 1.5rem;
-  color: #333;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.5px;
 }
 
 .refresh-button {
@@ -116,11 +125,16 @@
 
 .video-card {
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
-  background: #fff;
-  border: 1px solid #eee;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+}
+
+[data-theme="dark"] .video-card {
+  background: var(--color-surface-elevated);
+  border-color: var(--color-border);
 }
 
 .video-card:hover {
@@ -170,7 +184,7 @@
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -181,13 +195,13 @@
 .video-channel {
   margin: 0 0 0.25rem 0;
   font-size: 0.875rem;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .video-date {
   margin: 0;
   font-size: 0.75rem;
-  color: #999;
+  color: var(--color-text-disabled);
 }
 
 /* Responsive adjustments */

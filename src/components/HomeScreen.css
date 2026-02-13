@@ -57,6 +57,11 @@
   box-shadow: var(--shadow-md);
 }
 
+[data-theme="dark"] .home-card {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: var(--color-border);
+}
+
 .home-card::before {
   content: '';
   position: absolute;

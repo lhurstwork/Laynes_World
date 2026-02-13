@@ -7,6 +7,11 @@
   border: 1px solid var(--color-border-light);
 }
 
+[data-theme="dark"] .deals-widget {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: var(--color-border);
+}
+
 .widget-header {
   display: flex;
   justify-content: space-between;
@@ -157,6 +162,11 @@
   align-items: center;
   position: relative;
   overflow: hidden;
+}
+
+[data-theme="dark"] .deal-row {
+  background: var(--color-surface-elevated);
+  border-color: var(--color-border);
 }
 
 .deal-row::before {
