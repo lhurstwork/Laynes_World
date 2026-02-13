@@ -9,7 +9,6 @@ const DEALS_NAMESPACE_ID = process.env.DEALS_NAMESPACE_ID;
 // Reddit RSS feeds for Australian tech deals
 const REDDIT_FEEDS = {
   ozbargainnew: 'https://www.reddit.com/r/OzBargainNew/.rss',
-  bapcsalesaustralia: 'https://www.reddit.com/r/bapcsalesaustralia/.rss',
   australiandeals: 'https://www.reddit.com/r/AustralianDeals/.rss'
 };
 
