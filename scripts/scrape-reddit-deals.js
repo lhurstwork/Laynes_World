@@ -45,11 +45,12 @@ async function scrapeRedditRSS(feedUrl, source) {
         const expirationDate = new Date(publishedDate);
         expirationDate.setDate(expirationDate.getDate() + 7); // 7 days expiry
         
-        if (title && link) {
+        // Only add deals that have valid price information
+        if (title && link && priceInfo.salePrice > 0) {
           deals.push({
             id: `reddit-${source}-${i}-${Date.now()}`,
             productName: cleanTitle(title),
-            price: priceInfo.salePrice ? `$${priceInfo.salePrice}` : 'See deal',
+            price: priceInfo.salePrice ? `$${priceInfo.salePrice.toFixed(2)}` : 'See deal',
             originalPrice: priceInfo.originalPrice || 0,
             salePrice: priceInfo.salePrice || 0,
             discountPercentage: priceInfo.discountPercentage || 0,
@@ -63,6 +64,8 @@ async function scrapeRedditRSS(feedUrl, source) {
             expirationDate: expirationDate.toISOString(),
             scrapedAt: new Date().toISOString()
           });
+        } else if (title && link) {
+          console.log(`  ⚠ Skipping deal with no price info: ${title.substring(0, 60)}...`);
         }
       } catch (err) {
         console.error(`Error parsing entry from ${source}:`, err.message);
@@ -81,7 +84,7 @@ async function scrapeRedditRSS(feedUrl, source) {
 function extractPriceInfo(title, content) {
   const text = `${title} ${content}`;
   
-  // Find all prices
+  // Find all prices (including cents)
   const priceRegex = /\$(\d+(?:,\d{3})*(?:\.\d{2})?)/g;
   const prices = [];
   let match;
@@ -91,32 +94,55 @@ function extractPriceInfo(title, content) {
     prices.push(parseFloat(match[1].replace(/,/g, '')));
   }
   
-  // Find discount percentage
-  const discountRegex = /(\d+)%\s*(?:off|discount|save)/i;
+  // Find discount percentage - more flexible patterns
+  const discountRegex = /(\d+)%\s*(?:off|discount|save|cheaper|reduction)/i;
   const discountMatch = text.match(discountRegex);
   
+  // Pattern: "was $X now $Y" or "$X down to $Y"
+  const wasNowRegex = /(?:was|from|originally)\s*\$(\d+(?:,\d{3})*(?:\.\d{2})?)\s*(?:now|down to|reduced to)?\s*\$(\d+(?:,\d{3})*(?:\.\d{2})?)/i;
+  const wasNowMatch = text.match(wasNowRegex);
+  
+  if (wasNowMatch) {
+    const originalPrice = parseFloat(wasNowMatch[1].replace(/,/g, ''));
+    const salePrice = parseFloat(wasNowMatch[2].replace(/,/g, ''));
+    const discountPercentage = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+    return { originalPrice, salePrice, discountPercentage };
+  }
+  
+  // If we have 2+ prices, assume highest is original, lowest is sale
   if (prices.length >= 2) {
     const originalPrice = Math.max(...prices);
     const salePrice = Math.min(...prices);
     const discountPercentage = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
     return { originalPrice, salePrice, discountPercentage };
-  } else if (prices.length === 1 && discountMatch) {
-    const salePrice = prices[0];
+  }
+  
+  // If we have 1 price and a discount percentage, calculate original price
+  if (prices.length === 1 && discountMatch) {
     const discountPercentage = parseInt(discountMatch[1]);
-    const originalPrice = salePrice / (1 - discountPercentage / 100);
+    const salePrice = prices[0];
+    // If the price appears AFTER the percentage, it's likely the sale price
+    // Calculate original: salePrice = originalPrice * (1 - discount/100)
+    // So: originalPrice = salePrice / (1 - discount/100)
+    const originalPrice = Math.round((salePrice / (1 - discountPercentage / 100)) * 100) / 100;
     return { 
-      originalPrice: Math.round(originalPrice * 100) / 100, 
+      originalPrice, 
       salePrice, 
       discountPercentage 
     };
-  } else if (prices.length === 1) {
+  }
+  
+  // If we only have 1 price and no discount info, we can't determine the discount
+  // Return the price as sale price with no discount info
+  if (prices.length === 1) {
     return {
-      originalPrice: prices[0] * 1.2,
+      originalPrice: 0,
       salePrice: prices[0],
-      discountPercentage: 20
+      discountPercentage: 0
     };
   }
   
+  // No price information found
   return { originalPrice: 0, salePrice: 0, discountPercentage: 0 };
 }
 
